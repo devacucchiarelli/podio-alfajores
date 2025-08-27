@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Podio de Alfajores</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f8f8f8;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background: #eee;
+    }
+    img {
+      max-width: 50px;
+      border-radius: 5px;
+    }
+    button {
+      padding: 5px 10px;
+      border: none;
+      background: #28a745;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #218838;
+    }
+  </style>
+</head>
+<body>
+  <h1>🍫 Podio de Alfajores</h1>
+  <table id="tabla-alfajores">
+    <thead>
+      <tr>
+        <th>Foto</th>
+        <th>Marca</th>
+        <th>Tipo</th>
+        <th>Descripción</th>
+        <th>Votos</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const API_URL = "http://127.0.0.1:5000/alfajores"; // cambiar luego por la IP pública en Azure
+
+    async function cargarAlfajores() {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      const tbody = document.querySelector("#tabla-alfajores tbody");
+      tbody.innerHTML = "";
+
+      // ordenar por votos descendente para mostrar podio
+      data.sort((a, b) => b.votos - a.votos);
+
+      data.forEach(alf => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><img src="${alf.imagen_url}" alt="${alf.marca}"></td>
+          <td>${alf.marca}</td>
+          <td>${alf.tipo}</td>
+          <td>${alf.descripcion}</td>
+          <td>${alf.votos}</td>
+          <td><button onclick="votar(${alf.id})">Votar</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function votar(id) {
+      await fetch(`${API_URL}/${id}/votar`, { method: "POST" });
+      cargarAlfajores();
+    }
+
+    cargarAlfajores();
+  </script>
+</body>
+</html>
