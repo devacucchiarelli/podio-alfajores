@@ -30,8 +30,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: alfajores
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+      MYSQL_USER: administrador
+      MYSQL_PASSWORD: Hola123456789
     ports:
       - "3306:3306"
     networks:
