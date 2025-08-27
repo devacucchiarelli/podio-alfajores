@@ -29,7 +29,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: alfajores
+      MYSQL_DATABASE: alfajores_db
       MYSQL_USER: administrador
       MYSQL_PASSWORD: Hola123456789
     ports:
