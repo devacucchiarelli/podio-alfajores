@@ -1,83 +1,82 @@
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+import mysql.connector
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alfajores.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+CORS(app)
 
-db = SQLAlchemy(app)
+# Configuración de la DB
+db_config = {
+    'host': 'localhost',
+    'user': 'administrador',
+    'password': 'Hola123456789',
+    'database': 'alfajores_db'
+}
 
-class Alfajor(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    marca = db.Column(db.String(100), nullable=False)
-    tipo = db.Column(db.String(100), nullable=False)
-    descripcion = db.Column(db.String(200))
-    imagen_url = db.Column(db.String(200))
-    votos = db.Column(db.Integer, default=0)
+def get_db_connection():
+    return mysql.connector.connect(**db_config)
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "marca": self.marca,
-            "tipo": self.tipo,
-            "descripcion": self.descripcion,
-            "imagen_url": self.imagen_url,
-            "votos": self.votos
-        }
+#  Listar todos los alfajores ordenados por votos
+@app.route('/alfajores', methods=['GET'])
+def listar_alfajores():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM alfajores ORDER BY votos DESC")
+    alfajores = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(alfajores)
 
-# Crear la base de datos si no existe
-with app.app_context():
-    db.create_all()
-
-# Endpoints básicos
-@app.route("/alfajores", methods=["GET"])
-def get_alfajores():
-    alfajores = Alfajor.query.order_by(Alfajor.votos.desc()).all()
-    return jsonify([a.to_dict() for a in alfajores])
-
-@app.route("/alfajores", methods=["POST"])
-def add_alfajor():
+#  Agregar alfajor (público)
+@app.route('/alfajores', methods=['POST'])
+def agregar_alfajor():
     data = request.json
-    nuevo = Alfajor(
-        marca=data.get("marca"),
-        tipo=data.get("tipo"),
-        descripcion=data.get("descripcion"),
-        imagen_url=data.get("imagen_url"),
-    )
-    db.session.add(nuevo)
-    db.session.commit()
-    return jsonify(nuevo.to_dict()), 201
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO alfajores (nombre, descripcion, imagen, votos) VALUES (%s, %s, %s, 0)",
+                   (data['nombre'], data['descripcion'], data['imagen']))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Alfajor agregado con éxito"}), 201
 
-@app.route("/alfajores/<int:id>/votar", methods=["POST"])
+#  Modificar alfajor (solo admin)
+@app.route('/alfajores/<int:id>', methods=['PUT'])
+def modificar_alfajor(id):
+    if request.headers.get("X-Admin") != "true":
+        return jsonify({"error": "Solo el administrador puede modificar"}), 403
+
+    data = request.json
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE alfajores SET nombre=%s, descripcion=%s, imagen=%s WHERE id=%s",
+                   (data['nombre'], data['descripcion'], data['imagen'], id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Alfajor modificado con éxito"})
+
+#  Borrar alfajor (solo admin)
+@app.route('/alfajores/<int:id>', methods=['DELETE'])
+def borrar_alfajor(id):
+    if request.headers.get("X-Admin") != "true":
+        return jsonify({"error": "Solo el administrador puede borrar"}), 403
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM alfajores WHERE id=%s", (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Alfajor eliminado con éxito"})
+
+#  Votar por un alfajor (público)
+@app.route('/alfajores/<int:id>/votar', methods=['POST'])
 def votar_alfajor(id):
-    alfajor = Alfajor.query.get_or_404(id)
-    alfajor.votos += 1
-    db.session.commit()
-    return jsonify(alfajor.to_dict())
-
-# Actualizar un alfajor existente
-@app.route("/alfajores/<int:id>", methods=["PUT"])
-def update_alfajor(id):
-    alfajor = Alfajor.query.get_or_404(id)
-    data = request.get_json()
-
-    alfajor.marca = data.get("marca", alfajor.marca)
-    alfajor.tipo = data.get("tipo", alfajor.tipo)
-    alfajor.descripcion = data.get("descripcion", alfajor.descripcion)
-    alfajor.imagen_url = data.get("imagen_url", alfajor.imagen_url)
-
-    db.session.commit()
-    return jsonify(alfajor.to_dict())
-
-# Eliminar un alfajor
-@app.route("/alfajores/<int:id>", methods=["DELETE"])
-def delete_alfajor(id):
-    alfajor = Alfajor.query.get_or_404(id)
-    db.session.delete(alfajor)
-    db.session.commit()
-    return jsonify({"message": f"Alfajor {id} eliminado con éxito"})
-
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE alfajores SET votos = votos + 1 WHERE id=%s", (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Voto registrado"})
