@@ -7,7 +7,7 @@ CORS(app)
 
 # Configuración de la DB
 db_config = {
-    'host': 'localhost',
+    'host': 'db',
     'user': 'administrador',
     'password': 'Hola123456789',
     'database': 'alfajores_db'
