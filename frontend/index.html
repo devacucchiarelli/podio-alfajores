@@ -27,7 +27,7 @@
       background: #eee;
     }
     img {
-      max-width: 50px;
+      max-width: 80px;
       border-radius: 5px;
     }
     button {
@@ -40,6 +40,12 @@
     }
     button:hover {
       background: #218838;
+    }
+    .btn-delete {
+      background: #dc3545;
+    }
+    .btn-delete:hover {
+      background: #b02a37;
     }
   </style>
 </head>
@@ -60,36 +66,69 @@
   </table>
 
   <script>
-    const API_URL = "http://127.0.0.1:5000/alfajores"; // cambiar luego por la IP pública en Azure
+    // URL del backend (cambiar luego por la IP pública en Azure)
+    const API_URL = "http://127.0.0.1:5000/alfajores";
 
+    // detectar si es admin (?admin=true en la URL)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAdmin = urlParams.get("admin") === "true";
+
+    // cargar lista de alfajores
     async function cargarAlfajores() {
-      const res = await fetch(API_URL);
-      const data = await res.json();
-      const tbody = document.querySelector("#tabla-alfajores tbody");
-      tbody.innerHTML = "";
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
 
-      // ordenar por votos descendente para mostrar podio
-      data.sort((a, b) => b.votos - a.votos);
+        // ordenar por votos descendente
+        data.sort((a, b) => b.votos - a.votos);
 
-      data.forEach(alf => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><img src="${alf.imagen_url}" alt="${alf.marca}"></td>
-          <td>${alf.marca}</td>
-          <td>${alf.tipo}</td>
-          <td>${alf.descripcion}</td>
-          <td>${alf.votos}</td>
-          <td><button onclick="votar(${alf.id})">Votar</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
+        renderAlfajores(data);
+      } catch (err) {
+        console.error("Error cargando alfajores:", err);
+      }
     }
 
+    // votar
     async function votar(id) {
       await fetch(`${API_URL}/${id}/votar`, { method: "POST" });
       cargarAlfajores();
     }
 
+    // borrar (solo admin)
+    async function borrar(id) {
+      if (!isAdmin) return alert("Solo el administrador puede borrar");
+      await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+        headers: { "X-Admin": "true" }
+      });
+      cargarAlfajores();
+    }
+
+    // renderizar tabla
+    function renderAlfajores(alfajores) {
+      const tbody = document.querySelector("#tabla-alfajores tbody");
+      tbody.innerHTML = "";
+
+      alfajores.forEach((a) => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td><img src="${a.imagen || a.imagen_url}" alt="${a.marca || a.nombre}"></td>
+          <td>${a.marca || a.nombre}</td>
+          <td>${a.tipo || "-"}</td>
+          <td>${a.descripcion}</td>
+          <td>${a.votos}</td>
+          <td>
+            <button onclick="votar(${a.id})">Votar</button>
+            ${isAdmin ? `<button class="btn-delete" onclick="borrar(${a.id})">Borrar</button>` : ""}
+          </td>
+        `;
+
+        tbody.appendChild(row);
+      });
+    }
+
+    // inicializar
     cargarAlfajores();
   </script>
 </body>
