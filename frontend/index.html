@@ -119,11 +119,23 @@
     });
     cargarAlfajores();
   }
-
-  // editar (solo admin, futuro)
+// editar (solo admin)
   function editar(id) {
-    alert("Función de modificar en desarrollo");
-  }
+  const marca = prompt("Nueva marca:");
+  const tipo = prompt("Nuevo tipo:");
+  const descripcion = prompt("Nueva descripción:");
+  const imagen_url = prompt("Nueva URL de imagen:");
+
+  fetch(`${API_URL}/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin": "true"
+    },
+    body: JSON.stringify({ marca, tipo, descripcion, imagen_url })
+  }).then(() => cargarAlfajores());
+}
+
 
   // formulario agregar
   document.getElementById("form-alfajor").addEventListener("submit", async (e) => {
