@@ -73,11 +73,12 @@
   <button type="submit">Agregar</button>
 </form>
   <script>
-    const API_URL = "http://172.172.224.218:5000/alfajores";
+  const API_URL = "http://172.172.224.218:5000/alfajores";
   const urlParams = new URLSearchParams(window.location.search);
   const isAdmin = urlParams.get("admin") === "true";
 
-    document.getElementById("form-alfajor").addEventListener("submit", async (e) => {
+  // formulario agregar
+  document.getElementById("form-alfajor").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const nuevo = {
@@ -108,97 +109,85 @@
       alert("Error de red al agregar.");
     }
   });
-    
-     // renderizar tabla
+
+  // renderizar tabla
   function renderAlfajores(alfajores) {
-  const tbody = document.querySelector("#tabla-alfajores tbody");
-  tbody.innerHTML = "";
+    const tbody = document.querySelector("#tabla-alfajores tbody");
+    tbody.innerHTML = "";
 
-  alfajores.forEach((a) => {
-    const row = document.createElement("tr");
+    alfajores.forEach((a) => {
+      const row = document.createElement("tr");
 
-    row.innerHTML = `
-      <td><img src="${a.imagen || ''}" alt="${a.nombre || ''}"></td>
-      <td>${a.nombre || ''}</td>
-      <td>${a.tipo || '-'}</td>
-      <td>${a.descripcion || ''}</td>
-      <td>${a.votos ?? 0}</td>
-      <td>
-        <button onclick="votar(${a.id})">Votar</button>
-        ${isAdmin ? `
-          <button onclick="editar(${a.id}, ${JSON.stringify(a).replace(/"/g, '&quot;')})">Modificar</button>
-          <button class="btn-delete" onclick="borrar(${a.id})">Borrar</button>
-        ` : ""}
-      </td>
-    `;
+      row.innerHTML = `
+        <td><img src="${a.imagen || ''}" alt="${a.nombre || ''}"></td>
+        <td>${a.nombre || ''}</td>
+        <td>${a.tipo || '-'}</td>
+        <td>${a.descripcion || ''}</td>
+        <td>${a.votos ?? 0}</td>
+        <td>
+          <button onclick="votar(${a.id})">Votar</button>
+          ${isAdmin ? `
+            <button onclick="editar(${a.id}, ${JSON.stringify(a).replace(/"/g, '&quot;')})">Modificar</button>
+            <button class="btn-delete" onclick="borrar(${a.id})">Borrar</button>
+          ` : ""}
+        </td>
+      `;
 
-    tbody.appendChild(row);
-  });
-}
+      tbody.appendChild(row);
+    });
+  }
 
   async function votar(id) {
-  await fetch(`${API_URL}/${id}/votar`, { method: "POST" });
-  cargarAlfajores();
-}
-
-async function borrar(id) {
-  if (!isAdmin) return alert("Solo el administrador puede borrar");
-  await fetch(`${API_URL}/${id}`, {
-    method: "DELETE",
-    headers: { "X-Admin": "true" }
-  });
-  cargarAlfajores();
-}
-
-function editar(id, a) {
-  if (!isAdmin) return alert("Solo el administrador puede modificar");
-
-  const nombre = prompt("Nombre:", a.nombre || "");
-  if (nombre === null) return;
-
-  const tipo = prompt("Tipo:", a.tipo || "");
-  if (tipo === null) return;
-
-  const descripcion = prompt("Descripción:", a.descripcion || "");
-  if (descripcion === null) return;
-
-  const imagen = prompt("URL imagen:", a.imagen || "");
-  if (imagen === null) return;
-
-  fetch(`${API_URL}/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Admin": "true"
-    },
-    body: JSON.stringify({ nombre, tipo, descripcion, imagen })
-  }).then(() => cargarAlfajores());
-}
-
-
-  // formulario agregar
-  document.getElementById("form-alfajor").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const nuevo = {
-      marca: document.getElementById("marca").value,
-      tipo: document.getElementById("tipo").value,
-      descripcion: document.getElementById("descripcion").value,
-      imagen_url: document.getElementById("imagen_url").value
-    };
-
-    await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(nuevo)
-    });
-
-    e.target.reset();
+    await fetch(`${API_URL}/${id}/votar`, { method: "POST" });
     cargarAlfajores();
-  });
+  }
+
+  async function borrar(id) {
+    if (!isAdmin) return alert("Solo el administrador puede borrar");
+    await fetch(`${API_URL}/${id}`, {
+      method: "DELETE",
+      headers: { "X-Admin": "true" }
+    });
+    cargarAlfajores();
+  }
+
+  function editar(id, a) {
+    if (!isAdmin) return alert("Solo el administrador puede modificar");
+
+    const nombre = prompt("Nombre:", a.nombre || "");
+    if (nombre === null) return;
+
+    const tipo = prompt("Tipo:", a.tipo || "");
+    if (tipo === null) return;
+
+    const descripcion = prompt("Descripción:", a.descripcion || "");
+    if (descripcion === null) return;
+
+    const imagen = prompt("URL imagen:", a.imagen || "");
+    if (imagen === null) return;
+
+    fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Admin": "true"
+      },
+      body: JSON.stringify({ nombre, tipo, descripcion, imagen })
+    }).then(() => cargarAlfajores());
+  }
 
   // inicializar
+  async function cargarAlfajores() {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      renderAlfajores(data);
+    } catch (err) {
+      console.error("Error cargando alfajores:", err);
+    }
+  }
+
   cargarAlfajores();
-  </script>
+</script>
 </body>
 </html>
