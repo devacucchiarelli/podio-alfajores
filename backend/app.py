@@ -40,21 +40,33 @@ def agregar_alfajor():
     conn.close()
     return jsonify({"message": "Alfajor agregado con éxito"}), 201
 
-#  Modificar alfajor (solo admin)
-@app.route('/alfajores/<int:id>', methods=['PUT'])
+# modificar un alfajor (solo admin)
+@app.route("/alfajores/<int:id>", methods=["PUT"])
 def modificar_alfajor(id):
+    # verificar si es admin
     if request.headers.get("X-Admin") != "true":
         return jsonify({"error": "Solo el administrador puede modificar"}), 403
 
     data = request.json
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE alfajores SET nombre=%s, descripcion=%s, imagen=%s WHERE id=%s",
-                   (data['nombre'], data['descripcion'], data['imagen'], id))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return jsonify({"message": "Alfajor modificado con éxito"})
+    db = get_db()
+    cursor = db.cursor()
+
+    # actualizar campos permitidos
+    cursor.execute("""
+        UPDATE alfajores
+        SET marca = %s, tipo = %s, descripcion = %s, imagen_url = %s
+        WHERE id = %s
+    """, (
+        data.get("marca"),
+        data.get("tipo"),
+        data.get("descripcion"),
+        data.get("imagen_url"),
+        id
+    ))
+    db.commit()
+
+    return jsonify({"mensaje": "Alfajor modificado correctamente"})
+
 
 #  Borrar alfajor (solo admin)
 @app.route('/alfajores/<int:id>', methods=['DELETE'])
