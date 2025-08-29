@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   backend:
-    build: ./backend
+    image: acucchiarelli/podio-alfajores-backend:latest
     container_name: backend-flask
     ports:
       - "5000:5000"
@@ -14,7 +14,7 @@ services:
       - db
 
   frontend:
-    build: ./frontend
+    image: acucchiarelli/podio-alfajores-frontend:latest
     container_name: frontend-nginx
     ports:
       - "80:80"
