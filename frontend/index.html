@@ -64,72 +64,90 @@
     </thead>
     <tbody></tbody>
   </table>
-
+<h2>Agregar un Alfajor</h2>
+<form id="form-alfajor">
+  <input type="text" id="marca" placeholder="Marca" required>
+  <input type="text" id="tipo" placeholder="Tipo">
+  <input type="text" id="descripcion" placeholder="Descripción" required>
+  <input type="text" id="imagen_url" placeholder="URL de la imagen">
+  <button type="submit">Agregar</button>
+</form>
   <script>
-    // URL del backend (cambiar luego por la IP pública en Azure)
     const API_URL = "http://127.0.0.1:5000/alfajores";
+  const urlParams = new URLSearchParams(window.location.search);
+  const isAdmin = urlParams.get("admin") === "true";
 
-    // detectar si es admin (?admin=true en la URL)
-    const urlParams = new URLSearchParams(window.location.search);
-    const isAdmin = urlParams.get("admin") === "true";
+     // renderizar tabla
+  function renderAlfajores(alfajores) {
+    const tbody = document.querySelector("#tabla-alfajores tbody");
+    tbody.innerHTML = "";
 
-    // cargar lista de alfajores
-    async function cargarAlfajores() {
-      try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
+    alfajores.forEach((a) => {
+      const row = document.createElement("tr");
 
-        // ordenar por votos descendente
-        data.sort((a, b) => b.votos - a.votos);
+      row.innerHTML = `
+        <td><img src="${a.imagen || a.imagen_url}" alt="${a.marca || a.nombre}"></td>
+        <td>${a.marca || a.nombre}</td>
+        <td>${a.tipo || "-"}</td>
+        <td>${a.descripcion}</td>
+        <td>${a.votos}</td>
+        <td>
+          <button onclick="votar(${a.id})">Votar</button>
+          ${isAdmin ? `
+            <button onclick="editar(${a.id})">Modificar</button>
+            <button class="btn-delete" onclick="borrar(${a.id})">Borrar</button>
+          ` : ""}
+        </td>
+      `;
 
-        renderAlfajores(data);
-      } catch (err) {
-        console.error("Error cargando alfajores:", err);
-      }
-    }
+      tbody.appendChild(row);
+    });
+  }
 
-    // votar
-    async function votar(id) {
-      await fetch(`${API_URL}/${id}/votar`, { method: "POST" });
-      cargarAlfajores();
-    }
-
-    // borrar (solo admin)
-    async function borrar(id) {
-      if (!isAdmin) return alert("Solo el administrador puede borrar");
-      await fetch(`${API_URL}/${id}`, {
-        method: "DELETE",
-        headers: { "X-Admin": "true" }
-      });
-      cargarAlfajores();
-    }
-
-    // renderizar tabla
-    function renderAlfajores(alfajores) {
-      const tbody = document.querySelector("#tabla-alfajores tbody");
-      tbody.innerHTML = "";
-
-      alfajores.forEach((a) => {
-        const row = document.createElement("tr");
-
-        row.innerHTML = `
-          <td><img src="${a.imagen || a.imagen_url}" alt="${a.marca || a.nombre}"></td>
-          <td>${a.marca || a.nombre}</td>
-          <td>${a.tipo || "-"}</td>
-          <td>${a.descripcion}</td>
-          <td>${a.votos}</td>
-          <td>
-            <button onclick="votar(${a.id})">Votar</button>
-            ${isAdmin ? `<button class="btn-delete" onclick="borrar(${a.id})">Borrar</button>` : ""}
-          </td>
-        `;
-
-        tbody.appendChild(row);
-      });
-    }
-
-    // inicializar
+  // votar
+  async function votar(id) {
+    await fetch(`${API_URL}/${id}/votar`, { method: "POST" });
     cargarAlfajores();
+  }
+
+  // borrar (solo admin)
+  async function borrar(id) {
+    if (!isAdmin) return alert("Solo el administrador puede borrar");
+    await fetch(`${API_URL}/${id}`, {
+      method: "DELETE",
+      headers: { "X-Admin": "true" }
+    });
+    cargarAlfajores();
+  }
+
+  // editar (solo admin, futuro)
+  function editar(id) {
+    alert("Función de modificar en desarrollo");
+  }
+
+  // formulario agregar
+  document.getElementById("form-alfajor").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const nuevo = {
+      marca: document.getElementById("marca").value,
+      tipo: document.getElementById("tipo").value,
+      descripcion: document.getElementById("descripcion").value,
+      imagen_url: document.getElementById("imagen_url").value
+    };
+
+    await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(nuevo)
+    });
+
+    e.target.reset();
+    cargarAlfajores();
+  });
+
+  // inicializar
+  cargarAlfajores();
   </script>
 </body>
 </html>
