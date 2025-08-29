@@ -16,7 +16,7 @@ db_config = {
 def get_db_connection():
     return mysql.connector.connect(**db_config)
 
-#  Listar todos los alfajores ordenados por votos
+# Listar todos los alfajores ordenados por votos
 @app.route('/alfajores', methods=['GET'])
 def listar_alfajores():
     conn = get_db_connection()
@@ -27,7 +27,7 @@ def listar_alfajores():
     conn.close()
     return jsonify(alfajores)
 
-#  Agregar alfajor (público)
+# Agregar alfajor (público)
 @app.route('/alfajores', methods=['POST'])
 def agregar_alfajor():
     data = request.json or {}
@@ -51,7 +51,7 @@ def agregar_alfajor():
     conn.close()
     return jsonify({"message": "Alfajor agregado con éxito"}), 201
 
-#  Modificar un alfajor (solo admin)
+# Modificar un alfajor (solo admin)
 @app.route('/alfajores/<int:id>', methods=['PUT'])
 def modificar_alfajor(id):
     if request.headers.get("X-Admin") != "true":
@@ -80,24 +80,7 @@ def modificar_alfajor(id):
     conn.close()
     return jsonify({"message": "Alfajor modificado con éxito"})
 
-    # actualizar campos permitidos
-    cursor.execute("""
-        UPDATE alfajores
-        SET marca = %s, tipo = %s, descripcion = %s, imagen_url = %s
-        WHERE id = %s
-    """, (
-        data.get("marca"),
-        data.get("tipo"),
-        data.get("descripcion"),
-        data.get("imagen_url"),
-        id
-    ))
-    db.commit()
-
-    return jsonify({"mensaje": "Alfajor modificado correctamente"})
-
-
-#  Borrar alfajor (solo admin)
+# Borrar alfajor (solo admin)
 @app.route('/alfajores/<int:id>', methods=['DELETE'])
 def borrar_alfajor(id):
     if request.headers.get("X-Admin") != "true":
@@ -111,7 +94,7 @@ def borrar_alfajor(id):
     conn.close()
     return jsonify({"message": "Alfajor eliminado con éxito"})
 
-#  Votar por un alfajor (público)
+# Votar por un alfajor (público)
 @app.route('/alfajores/<int:id>/votar', methods=['POST'])
 def votar_alfajor(id):
     conn = get_db_connection()
@@ -121,3 +104,4 @@ def votar_alfajor(id):
     cursor.close()
     conn.close()
     return jsonify({"message": "Voto registrado"})
+
