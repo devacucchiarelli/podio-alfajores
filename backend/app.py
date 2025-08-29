@@ -30,26 +30,55 @@ def listar_alfajores():
 #  Agregar alfajor (público)
 @app.route('/alfajores', methods=['POST'])
 def agregar_alfajor():
-    data = request.json
+    data = request.json or {}
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO alfajores (nombre, descripcion, imagen, votos) VALUES (%s, %s, %s, 0)",
-                   (data['nombre'], data['descripcion'], data['imagen']))
+
+    cursor.execute(
+        """
+        INSERT INTO alfajores (nombre, tipo, descripcion, imagen, votos)
+        VALUES (%s, %s, %s, %s, 0)
+        """,
+        (
+            data.get('nombre'),
+            data.get('tipo'),
+            data.get('descripcion'),
+            data.get('imagen')
+        )
+    )
     conn.commit()
     cursor.close()
     conn.close()
     return jsonify({"message": "Alfajor agregado con éxito"}), 201
 
-# modificar un alfajor (solo admin)
-@app.route("/alfajores/<int:id>", methods=["PUT"])
+#  Modificar un alfajor (solo admin)
+@app.route('/alfajores/<int:id>', methods=['PUT'])
 def modificar_alfajor(id):
-    # verificar si es admin
     if request.headers.get("X-Admin") != "true":
         return jsonify({"error": "Solo el administrador puede modificar"}), 403
 
-    data = request.json
-    db = get_db()
-    cursor = db.cursor()
+    data = request.json or {}
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE alfajores
+        SET nombre = %s, tipo = %s, descripcion = %s, imagen = %s
+        WHERE id = %s
+        """,
+        (
+            data.get('nombre'),
+            data.get('tipo'),
+            data.get('descripcion'),
+            data.get('imagen'),
+            id
+        )
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Alfajor modificado con éxito"})
 
     # actualizar campos permitidos
     cursor.execute("""
